@@ -1,0 +1,2 @@
+2025-07-30 17:51:47,976 - INFO - Namespace(config_file='config/config.json', timeout=1200)
+2025-07-30 17:51:47,976 - INFO - Executing the following command test_nsg.py with arguments ['-c', 'config/config.json']

@@ -83,6 +83,9 @@ def create_bkp():
     data["psql_db_details"]["storage_details"]["is_regionally_durable"] = oci_src_db_sys_details.data.storage_details.is_regionally_durable
     data["psql_db_details"]["storage_details"]["system_type"] = oci_src_db_sys_details.data.storage_details.system_type
     data["psql_db_details"]["management_policy"]["maintenance_window_start"] =  oci_src_db_sys_details.data.management_policy.maintenance_window_start
+
+    
+    
     try:
         data["psql_db_details"]["management_policy"]["backup_policy"]["backup_start"] = oci_src_db_sys_details.data.management_policy.backup_policy.backup_start.split(' ')[0]
         data["psql_db_details"]["management_policy"]["backup_policy"]["retention_days"] = oci_src_db_sys_details.data.management_policy.backup_policy.retention_days
@@ -97,7 +100,53 @@ def create_bkp():
         data["psql_db_details"]["management_policy"]["backup_policy"]["retention_days"] = ""
         data["psql_db_details"]["management_policy"]["backup_policy"]["kind"] = "NONE"
         data["psql_db_details"]["management_policy"]["backup_policy"]["copy_policy"]["compartment_id"] = ""
+    
+    #LS NSG start
+   
+    primary_subnet_id = data["psql_db_details"]["primary_subnet_id"]
 
+    primary_network_client = oci.core.VirtualNetworkClient(config=oci_src_config, signer=oci_signer)
+    primary_subnet = primary_network_client.get_subnet(subnet_id=primary_subnet_id).data
+
+    primary_nsg_ids = primary_subnet.nsg_ids
+
+    primary_nsg_rules = []
+    for nsg_id in primary_nsg_ids:
+        primary_nsg = primary_network_client.get_network_security_group(network_security_group_id=nsg_id).data
+        primary_nsg_rules.append({
+            "id": nsg_id,
+            "display_name": primary_nsg.display_name,
+            "ingress_rules": [],
+            "egress_rules": []
+        })
+        for rule in primary_network_client.list_network_security_group_security_rules(network_security_group_id=nsg_id).data:
+            if rule.direction == "INGRESS":
+                primary_nsg_rules[-1]["ingress_rules"].append({
+                    "protocol": rule.protocol,
+                    "source": rule.source,
+                    "source_type": rule.source_type,
+                    "tcp_options": rule.tcp_options,
+                    "udp_options": rule.udp_options,
+                    "icmp_options": rule.icmp_options
+                })
+            else:
+                primary_nsg_rules[-1]["egress_rules"].append({
+                    "protocol": rule.protocol,
+                    "destination": rule.destination,
+                    "destination_type": rule.destination_type,
+                    "tcp_options": rule.tcp_options,
+                    "udp_options": rule.udp_options,
+                    "icmp_options": rule.icmp_options
+                })
+    data["psql_db_details"]["primary_nsg_rules"] = primary_nsg_rules
+    data["psql_db_details"]["standby_nsg_rules"] = primary_nsg_rules
+    
+    # Update display_name for standby_nsg_rules
+    for rule in data["psql_db_details"]["standby_nsg_rules"]:
+        rule["display_name"] = "standby_" + rule["display_name"]
+
+    #LS NSG end
+      
     update_file = psql_utils.update_config_file(config_file_name,data)
     if not update_file:
         os.remove(regions_file)
