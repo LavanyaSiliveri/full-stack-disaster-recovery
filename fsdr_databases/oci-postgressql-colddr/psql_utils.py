@@ -142,4 +142,54 @@ def add_nsg_rules(network_client, nsg_id, ingress_rules, egress_rules):
         ]
         egress_details = oci.core.models.AddNetworkSecurityGroupSecurityRulesDetails(security_rules=egress_objs)
         network_client.add_network_security_group_security_rules(nsg_id, egress_details)
+
+def add_only_new_nsg_rules(network_client, nsg_id, ingress_rules, egress_rules):
+    # Get current rules
+    existing_rules = network_client.list_network_security_group_security_rules(nsg_id).data
+
+    # Build lists of new (unique) rules
+    new_ingress = []
+    for rule in ingress_rules:
+        found = any(
+            # Rule must match all relevant fields
+            r.direction == "INGRESS" and rule_equals(r, rule, "INGRESS")
+            for r in existing_rules
+        )
+        if not found:
+            new_ingress.append(
+                oci.core.models.AddNetworkSecurityGroupSecurityRulesDetailsSecurityRulesItem(
+                    direction="INGRESS", **nsg_rule_from_dict(rule, "INGRESS")
+                )
+            )
+
+    new_egress = []
+    for rule in egress_rules:
+        found = any(
+            r.direction == "EGRESS" and rule_equals(r, rule, "EGRESS")
+            for r in existing_rules
+        )
+        if not found:
+            new_egress.append(
+                oci.core.models.AddNetworkSecurityGroupSecurityRulesDetailsSecurityRulesItem(
+                    direction="EGRESS", **nsg_rule_from_dict(rule, "EGRESS")
+                )
+            )
+
+    if new_ingress:
+        ingress_details = oci.core.models.AddNetworkSecurityGroupSecurityRulesDetails(
+            security_rules=new_ingress
+        )
+        network_client.add_network_security_group_security_rules(nsg_id, ingress_details)
+        print(f"    Added {len(new_ingress)} new ingress rule(s).")
+    else:
+        print(f"    No new ingress rules to add.")
+
+    if new_egress:
+        egress_details = oci.core.models.AddNetworkSecurityGroupSecurityRulesDetails(
+            security_rules=new_egress
+        )
+        network_client.add_network_security_group_security_rules(nsg_id, egress_details)
+        print(f"    Added {len(new_egress)} new egress rule(s).")
+    else:
+        print(f"    No new egress rules to add.")
 #LS NSG END
