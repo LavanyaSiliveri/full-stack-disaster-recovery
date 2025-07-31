@@ -102,13 +102,14 @@ def create_bkp():
         data["psql_db_details"]["management_policy"]["backup_policy"]["copy_policy"]["compartment_id"] = ""
     
     #LS NSG start
-   
-    primary_subnet_id = data["psql_db_details"]["primary_subnet_id"]
+    
+    psql_network_details = oci_src_db_sys_details.network_details
+    primary_nsg_ids = psql_network_details.nsg_ids
 
-    primary_network_client = oci.core.VirtualNetworkClient(config=oci_src_config, signer=oci_signer)
-    primary_subnet = primary_network_client.get_subnet(subnet_id=primary_subnet_id).data
-
-    primary_nsg_ids = primary_subnet.nsg_ids
+    standby_subnet_id = data["psql_db_details"]["standby_subnet_id"]
+    standby_network_client = oci.core.VirtualNetworkClient(config=oci_standby_config, signer=oci_signer)
+    standby_subnet = standby_network_client.get_subnet(subnet_id=data["psql_db_details"]["standby_subnet_id"]).data
+    standby_subnet_cidr = standby_subnet.cidr_block
 
     primary_nsg_rules = []
     for nsg_id in primary_nsg_ids:
@@ -138,12 +139,17 @@ def create_bkp():
                     "udp_options": rule.udp_options,
                     "icmp_options": rule.icmp_options
                 })
+                
     data["psql_db_details"]["primary_nsg_rules"] = primary_nsg_rules
-    data["psql_db_details"]["standby_nsg_rules"] = primary_nsg_rules
+    standby_nsg_rules = copy.deepcopy(primary_nsg_rules)   
+
+    for rule in standby_nsg_rules:
+        rule["display_name"] = f"standby_{rule['display_name']}"
+        for ing in rule["ingress_rules"]:
+            if ing["source_type"] == "CIDR_BLOCK":
+                ing["source"] = standby_subnet_cidr
     
-    # Update display_name for standby_nsg_rules
-    for rule in data["psql_db_details"]["standby_nsg_rules"]:
-        rule["display_name"] = "standby_" + rule["display_name"]
+    data["psql_db_details"]["standby_nsg_rules"] = standby_nsg_rules
 
     #LS NSG end
       

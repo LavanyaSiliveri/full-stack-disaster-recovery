@@ -1,6 +1,7 @@
 import oci
 import argparse
 import os
+import copy
 import sys
 import logging
 from datetime import timezone
@@ -35,14 +36,20 @@ def test_nsg_bkp():
 
     oci_src_region = data["psql_db_details"]["primary_region"]
     oci_dst_region = data["psql_db_details"]["standby_region"]
+    oci_src_db_system_id = data["psql_db_details"]["id"]
 
-    # regions_file = psql_utils.prepare_regions_file(oci_src_region,oci_dst_region,current_directory,base_config_file_name,script_name)
     
     oci_signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-    oci_src_config = oci.config.from_file("~/.oci/config ", profile_name="DEFAULT")
-    oci_standby_config = oci.config.from_file("~/.oci/config ", profile_name="STANDBY")
+    oci_src_config = oci.config.from_file("/home/opc/.oci/config", profile_name="DEFAULT")
+    oci_standby_config = oci.config.from_file("/home/opc/.oci/config", profile_name="PHX")
+    oci_db_system_client = oci.psql.PostgresqlClient(config=oci_src_config, signer=oci_signer)
     
+    oci_src_db_sys_details = (oci_db_system_client.get_db_system(oci_src_db_system_id)).data
 
+    psql_network_details = oci_src_db_sys_details.network_details
+    primary_nsg_ids = psql_network_details.nsg_ids
+
+    
     primary_subnet_id = data["psql_db_details"]["primary_subnet_id"]
     standby_subnet_id = data["psql_db_details"]["standby_subnet_id"]
     standby_network_client = oci.core.VirtualNetworkClient(config=oci_standby_config, signer=oci_signer)
@@ -52,7 +59,8 @@ def test_nsg_bkp():
     primary_network_client = oci.core.VirtualNetworkClient(config=oci_src_config, signer=oci_signer)
     primary_subnet = primary_network_client.get_subnet(subnet_id=primary_subnet_id).data
 
-    primary_nsg_ids = primary_subnet.nsg_ids
+    psql_network_details = oci_src_db_sys_details.network_details
+    primary_nsg_ids = psql_network_details.nsg_ids
 
     primary_nsg_rules = []
     for nsg_id in primary_nsg_ids:
@@ -83,16 +91,16 @@ def test_nsg_bkp():
                     "icmp_options": rule.icmp_options
                 })
     data["psql_db_details"]["primary_nsg_rules"] = primary_nsg_rules
-    data["psql_db_details"]["standby_nsg_rules"] = primary_nsg_rules
+    standby_nsg_rules = copy.deepcopy(primary_nsg_rules)   
+
+    for rule in standby_nsg_rules:
+        rule["display_name"] = f"standby_{rule['display_name']}"
+        for ing in rule["ingress_rules"]:
+            if ing["source_type"] == "CIDR_BLOCK":
+                ing["source"] = standby_subnet_cidr
     
-    # Update display_name for standby_nsg_rules
-    for rule in data["psql_db_details"]["standby_nsg_rules"]:
-        rule["display_name"] = "standby_" + rule["display_name"]
-        for ingress_rule in rule["ingress_rules"]:
-            if ingress_rule["source_type"] == "CIDR_BLOCK":
-                ingress_rule["source"] = standby_subnet_cidr
-        
-    
+    data["psql_db_details"]["standby_nsg_rules"] = standby_nsg_rules
+
     update_file = psql_utils.update_config_file(config_file_name,data)
 
 if __name__ == "__main__":

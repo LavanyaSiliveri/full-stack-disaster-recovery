@@ -109,9 +109,46 @@ def restore_bkp():
         oci_dst_last_bkp_name = oci_dst_db_bkp_lst.data.items[0].display_name
         oci_dst_db_system_bkp_source_details = oci.psql.models.BackupSourceDetails(backup_id=oci_dst_last_bkp_id,source_type="BACKUP",is_having_restore_config_overrides=False)
         
+        #LS commented for adding the nsg_ids below
+
+        # oci_dst_db_system_network_details = oci.psql.models.NetworkDetails(
+        #     subnet_id = oci_dst_subnet_id
+        # )
+
+        #LS NSG START
+        standby_nsg_rules = data["psql_db_details"]["standby_nsg_rules"]
+        standby_nsg_ids = []
+
+        dst_vcn_id, dst_compartment_id = psql_utils.get_vcn_id_from_subnet(oci_dst_config, oci_dst_subnet_id, signer=signer)
+        dst_network_client = oci.core.VirtualNetworkClient(oci_dst_config, signer=signer)
+
+        for nsg_def in standby_nsg_rules:
+            nsg_display_name = nsg_def['display_name']
+            ingress_rules = nsg_def.get('ingress_rules', [])
+            egress_rules = nsg_def.get('egress_rules', [])
+            print(f"Checking for NSG: {nsg_display_name}")
+
+            # Step 2: check if NSG exists?
+            nsg_id = psql_utils.find_nsg_id_by_name(dst_network_client, dst_compartment_id, dst_vcn_id, nsg_display_name)
+            if nsg_id:
+                print(f"  NSG '{nsg_display_name}' already exists with OCID: {nsg_id}")
+            else:
+                print(f"  Creating NSG '{nsg_display_name}'...")
+                nsg_id = psql_utils.create_network_security_group(dst_network_client, dst_compartment_id, dst_vcn_id, nsg_display_name)
+                standby_nsg_ids.append(nsg_id)
+                print(f"  Created NSG with OCID: {nsg_id}")
+
+            # Step 3: Add rules
+            psql_utils.add_only_new_nsg_rules(dst_network_client, nsg_id, ingress_rules, egress_rules)
+            print(f"  Added rules to NSG '{nsg_display_name}'.")
+
+        print("All NSGs and rules ensured!")
+
         oci_dst_db_system_network_details = oci.psql.models.NetworkDetails(
-            subnet_id = oci_dst_subnet_id
+            subnet_id = oci_dst_subnet_id, nsg_ids = standby_nsg_ids
         )
+
+        #LS NSG END
         
         if oci_dst_db_bkp_retention_days == "":
             oci_dst_db_system_mgmt_details = oci.psql.models.ManagementPolicyDetails(

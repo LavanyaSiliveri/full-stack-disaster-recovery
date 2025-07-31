@@ -1,7 +1,7 @@
 {
     "psql_db_details": {
-        "id": "ocid1.postgresqldbsystem.oc1.me-dubai-1.xxxxxx",
-        "compartment_id": "ocid1.compartment.oc1..xxxxxx",
+        "id": "ocid1.postgresqldbsystem.oc1.iad.amaaaaaady7f6oyazent7zexapft24xxrh6jsy56uel3p4ube46yojekcdwa",
+        "compartment_id": "compartment-id = ocid1.compartment.oc1..aaaaaaaanm2gjsz5msbct6y77lsv56tppc2v6qrxzbsomnmjccvgpvlepc4q",
         "primary_region": "us-ashburn-1",
         "standby_region": "us-phoenix-1",
         "primary_subnet_id": "ocid1.subnet.oc1.iad.aaaaaaaaawufygdy3bkffdkcymrldqmvcczz4xl7epzrtxsp4ok7tluuj3ga",
@@ -34,7 +34,237 @@
             "maintenance_window_start": "TUE 12:30"
         },
         "psql_db_to_terminate_id": "",
-        "psql_config_to_terminate_id": ""
+        "psql_config_to_terminate_id": "",
+        "primary_nsg_rules": [
+            {
+                "id": "ocid1.networksecuritygroup.oc1.iad.aaaaaaaasntq4yqt3xkcq3m7hovae2wrexhwwc6whw44g6jnjaua3jtkbjjq",
+                "display_name": "db-nsg",
+                "ingress_rules": [
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.0/28",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 5432,
+                                "min": 5432
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.0/28",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 8010,
+                                "min": 8009
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.0/28",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 3000,
+                                "min": 3000
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.0/28",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 8585,
+                                "min": 8585
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "17",
+                        "source": "10.0.0.0/28",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": null,
+                        "udp_options": {
+                            "destination_port_range": null,
+                            "source_port_range": null
+                        },
+                        "icmp_options": null
+                    }
+                ],
+                "egress_rules": [
+                    {
+                        "protocol": "all",
+                        "destination": "0.0.0.0/0",
+                        "destination_type": "CIDR_BLOCK",
+                        "tcp_options": null,
+                        "udp_options": null,
+                        "icmp_options": null
+                    }
+                ]
+            },
+            {
+                "id": "ocid1.networksecuritygroup.oc1.iad.aaaaaaaaiylvfu6b43w3koycucqindttiw7vw4l2aieixb2yhillakxeszva",
+                "display_name": "test-nsg",
+                "ingress_rules": [
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.0/28",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 22,
+                                "min": 22
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    }
+                ],
+                "egress_rules": [
+                    {
+                        "protocol": "all",
+                        "destination": "0.0.0.0/0",
+                        "destination_type": "CIDR_BLOCK",
+                        "tcp_options": null,
+                        "udp_options": null,
+                        "icmp_options": null
+                    }
+                ]
+            }
+        ],
+        "standby_nsg_rules": [
+            {
+                "id": "ocid1.networksecuritygroup.oc1.iad.aaaaaaaasntq4yqt3xkcq3m7hovae2wrexhwwc6whw44g6jnjaua3jtkbjjq",
+                "display_name": "standby_db-nsg",
+                "ingress_rules": [
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.8/29",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 5432,
+                                "min": 5432
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.8/29",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 8010,
+                                "min": 8009
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.8/29",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 3000,
+                                "min": 3000
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.8/29",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 8585,
+                                "min": 8585
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    },
+                    {
+                        "protocol": "17",
+                        "source": "10.0.0.8/29",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": null,
+                        "udp_options": {
+                            "destination_port_range": null,
+                            "source_port_range": null
+                        },
+                        "icmp_options": null
+                    }
+                ],
+                "egress_rules": [
+                    {
+                        "protocol": "all",
+                        "destination": "0.0.0.0/0",
+                        "destination_type": "CIDR_BLOCK",
+                        "tcp_options": null,
+                        "udp_options": null,
+                        "icmp_options": null
+                    }
+                ]
+            },
+            {
+                "id": "ocid1.networksecuritygroup.oc1.iad.aaaaaaaaiylvfu6b43w3koycucqindttiw7vw4l2aieixb2yhillakxeszva",
+                "display_name": "standby_test-nsg",
+                "ingress_rules": [
+                    {
+                        "protocol": "6",
+                        "source": "10.0.0.8/29",
+                        "source_type": "CIDR_BLOCK",
+                        "tcp_options": {
+                            "destination_port_range": {
+                                "max": 22,
+                                "min": 22
+                            },
+                            "source_port_range": null
+                        },
+                        "udp_options": null,
+                        "icmp_options": null
+                    }
+                ],
+                "egress_rules": [
+                    {
+                        "protocol": "all",
+                        "destination": "0.0.0.0/0",
+                        "destination_type": "CIDR_BLOCK",
+                        "tcp_options": null,
+                        "udp_options": null,
+                        "icmp_options": null
+                    }
+                ]
+            }
+        ]
     },
     "dns_details": {
         "regions": [
