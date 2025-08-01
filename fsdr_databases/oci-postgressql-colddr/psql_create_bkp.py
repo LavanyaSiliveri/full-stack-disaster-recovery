@@ -13,6 +13,7 @@ import logging
 from datetime import timezone
 import datetime
 import psql_utils
+import copy
 
 # Argument Parsing
 # This section parses the command-line arguments for the script.
@@ -51,6 +52,7 @@ def create_bkp():
     # Set up OCI signer and configuration
     oci_signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
     oci_src_config = oci.config.from_file(file_location=regions_file, profile_name="SOURCE")
+    oci_standby_config = oci.config.from_file(file_location=regions_file, profile_name="DESTINATION")
     oci_db_system_client = oci.psql.PostgresqlClient(config=oci_src_config, signer=oci_signer)
     
     # OCI get PostgreSQL DB Systems details
@@ -102,11 +104,16 @@ def create_bkp():
         data["psql_db_details"]["management_policy"]["backup_policy"]["copy_policy"]["compartment_id"] = ""
     
     #LS NSG start
-    
-    psql_network_details = oci_src_db_sys_details.network_details
+    primary_subnet_id = data["psql_db_details"]["primary_subnet_id"]
+    standby_subnet_id = data["psql_db_details"]["standby_subnet_id"]
+    oci_src_db_sys_details_for_rules = (oci_db_system_client.get_db_system(oci_src_db_system_id)).data
+    primary_network_client = oci.core.VirtualNetworkClient(config=oci_src_config, signer=oci_signer)
+    primary_subnet = primary_network_client.get_subnet(subnet_id=primary_subnet_id).data
+
+    psql_network_details = oci_src_db_sys_details_for_rules.network_details
     primary_nsg_ids = psql_network_details.nsg_ids
 
-    standby_subnet_id = data["psql_db_details"]["standby_subnet_id"]
+    
     standby_network_client = oci.core.VirtualNetworkClient(config=oci_standby_config, signer=oci_signer)
     standby_subnet = standby_network_client.get_subnet(subnet_id=data["psql_db_details"]["standby_subnet_id"]).data
     standby_subnet_cidr = standby_subnet.cidr_block
@@ -139,7 +146,7 @@ def create_bkp():
                     "udp_options": rule.udp_options,
                     "icmp_options": rule.icmp_options
                 })
-                
+
     data["psql_db_details"]["primary_nsg_rules"] = primary_nsg_rules
     standby_nsg_rules = copy.deepcopy(primary_nsg_rules)   
 

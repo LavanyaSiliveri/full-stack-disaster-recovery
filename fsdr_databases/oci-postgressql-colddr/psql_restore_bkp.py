@@ -119,8 +119,8 @@ def restore_bkp():
         standby_nsg_rules = data["psql_db_details"]["standby_nsg_rules"]
         standby_nsg_ids = []
 
-        dst_vcn_id, dst_compartment_id = psql_utils.get_vcn_id_from_subnet(oci_dst_config, oci_dst_subnet_id, signer=signer)
-        dst_network_client = oci.core.VirtualNetworkClient(oci_dst_config, signer=signer)
+        dst_vcn_id, dst_compartment_id = psql_utils.get_vcn_id_from_subnet(oci_dst_config, oci_dst_subnet_id, signer=oci_signer)
+        dst_network_client = oci.core.VirtualNetworkClient(oci_dst_config, signer=oci_signer)
 
         for nsg_def in standby_nsg_rules:
             nsg_display_name = nsg_def['display_name']
@@ -132,6 +132,7 @@ def restore_bkp():
             nsg_id = psql_utils.find_nsg_id_by_name(dst_network_client, dst_compartment_id, dst_vcn_id, nsg_display_name)
             if nsg_id:
                 print(f"  NSG '{nsg_display_name}' already exists with OCID: {nsg_id}")
+                standby_nsg_ids.append(nsg_id)
             else:
                 print(f"  Creating NSG '{nsg_display_name}'...")
                 nsg_id = psql_utils.create_network_security_group(dst_network_client, dst_compartment_id, dst_vcn_id, nsg_display_name)
