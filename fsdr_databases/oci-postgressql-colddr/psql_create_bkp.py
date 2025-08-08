@@ -151,7 +151,6 @@ def create_bkp():
     standby_nsg_rules = copy.deepcopy(primary_nsg_rules)   
 
     for rule in standby_nsg_rules:
-        rule["display_name"] = f"standby_{rule['display_name']}"
         for ing in rule["ingress_rules"]:
             if ing["source_type"] == "CIDR_BLOCK":
                 ing["source"] = standby_subnet_cidr

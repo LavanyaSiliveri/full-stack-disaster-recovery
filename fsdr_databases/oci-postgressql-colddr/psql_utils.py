@@ -251,7 +251,7 @@ def build_oci_egress(rule):
 
 def add_only_new_nsg_rules(network_client, nsg_id, ingress_rules, egress_rules):
     logging.info(f"Entering add_only_new_nsg_rules function with nsg_id: {nsg_id}")
-    log_nsg_rules(network_client, nsg_id, tag='(Existing)')
+    # log_nsg_rules(network_client, nsg_id, tag='(Existing)')
 
     # Get current rules
     try:
@@ -280,7 +280,7 @@ def add_only_new_nsg_rules(network_client, nsg_id, ingress_rules, egress_rules):
             new_egress.append(rule)
 
     ingress_rule_dicts = [to_dict(rule) for rule in new_ingress]
-    logging.info("new ingress rules for NSG ID %s:\n%s", nsg_id, json.dumps(ingress_rule_dicts, indent=2))
+    # logging.info("new ingress rules for NSG ID %s:\n%s", nsg_id, json.dumps(ingress_rule_dicts, indent=2))
 
     # Add new ingress rules if any
     if new_ingress:
@@ -291,7 +291,7 @@ def add_only_new_nsg_rules(network_client, nsg_id, ingress_rules, egress_rules):
             )
             try:
                 response = network_client.add_network_security_group_security_rules(nsg_id, ingress_details)
-                logging.info(f"Add ingress response (raw) from OCI: {response.data}")
+                # logging.info(f"Add ingress response (raw) from OCI: {response.data}")
             except Exception as e:
                 logging.error(f"Failed to add new ingress rules: {e}")
 
@@ -304,11 +304,11 @@ def add_only_new_nsg_rules(network_client, nsg_id, ingress_rules, egress_rules):
             )
             try:
                 response = network_client.add_network_security_group_security_rules(nsg_id, egress_details)
-                logging.info(f"Add egress response (raw) from OCI: {response.data}")
+                # logging.info(f"Add egress response (raw) from OCI: {response.data}")
             except Exception as e:
                 logging.error(f"Failed to add new egress rules: {e}")
 
-    log_nsg_rules(network_client, nsg_id, tag='(AFTER ADD)')
+    # log_nsg_rules(network_client, nsg_id, tag='(AFTER ADD)')
     logging.info("Exiting add_only_new_nsg_rules function")
 
 def rule_equals(existing_rule, rule_dict, direction):
